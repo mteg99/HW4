@@ -11,8 +11,8 @@ N_TRAIN = 1000
 N_TEST = 10000
 
 
-def cross_validate(x_train, y_train, c, gamma, avg_pr_error):
-    avg_pr_error.append(q2.cross_validate(x_train, y_train, 10, c, gamma))
+def cross_validate(x_train, y_train, c, gamma, i, avg_pr_error):
+    avg_pr_error[i] = (q2.cross_validate(x_train, y_train, 10, c, gamma))
     print('C = ' + str(c) + ', sigma = ' + str(gamma))
 
 
@@ -39,16 +39,18 @@ def main():
     # Cross-validate hyperparameters
     workers = []
     manager = mp.Manager()
-    avg_pr_error = manager.list()
     order = 3
     grid_size = 2 * order + 1
+    avg_pr_error = manager.list(range(grid_size ** 2))
     c_scale = np.logspace(-order, order, num=grid_size)
     gamma_scale = np.logspace(-order, order, num=grid_size)
+    i = 0
     for c in c_scale:
         for gamma in gamma_scale:
-            w = mp.Process(target=cross_validate, args=(x_train, y_train, c, gamma, avg_pr_error))
+            w = mp.Process(target=cross_validate, args=(x_train, y_train, c, gamma, i, avg_pr_error))
             workers.append(w)
             w.start()
+            i += 1
     for w in workers:
         w.join()
     avg_pr_error = np.array(avg_pr_error).reshape((grid_size, grid_size))
